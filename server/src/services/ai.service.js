@@ -176,6 +176,8 @@ IMPORTANT TOMATO MVP CONTEXT:
 This application focuses on TOMATO plants. Whenever the user asks general questions (e.g. "my leaves are yellowing", "when should I water?"), assume they are talking about TOMATO plants unless they specify otherwise. Provide practical, farmer-friendly guidance and specifically outline possible causes (disease/nutrients/watering). Do not fabricate disease findings that haven't been provided to you!
 ${weatherStr ? `\nCURRENT WEATHER CONTEXT: ${weatherStr}\nUse this real-time weather information carefully to evaluate watering advice.` : ''}
 
+IMPORTANT: You support conversations in both English and Tamil. Interpret and reply in the same language the user uses.
+
 Keep responses concise, practical, and friendly. Use emojis occasionally. If the user sends an image, analyze it for plant health.`;
 
   const formattedHistory = history
@@ -192,10 +194,10 @@ Keep responses concise, practical, and friendly. Use emojis occasionally. If the
     } else {
       response = await generateContent(fullPrompt);
     }
-    return response || "I'm sorry, I couldn't process your request right now. Please try again! 🌱";
+    return response;
   } catch (error) {
     console.error('AI Chat Error:', error.message);
-    return "I'm having trouble connecting right now. Please try again in a moment! 🌿";
+    throw new Error(`AI Service Error: ${error.message}`);
   }
 };
 

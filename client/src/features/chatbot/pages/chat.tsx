@@ -52,8 +52,8 @@ export default function Chatbot() {
         }
         setMessages((prev) => [...prev, ...newMessages]);
       }
-    } catch {
-      toast.error('Failed to send message');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to send message');
     } finally {
       setSending(false);
     }
