@@ -61,7 +61,7 @@ export default function Login() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-light)' }}>
             Email Address
           </label>
@@ -78,7 +78,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-light)' }}>
               Password

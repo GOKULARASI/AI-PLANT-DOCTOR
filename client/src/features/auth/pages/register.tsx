@@ -66,7 +66,7 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-light)' }}>
             Full Name
           </label>
@@ -83,7 +83,7 @@ export default function Register() {
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-light)' }}>
             Email Address
           </label>
@@ -100,7 +100,7 @@ export default function Register() {
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-light)' }}>
             Password
           </label>

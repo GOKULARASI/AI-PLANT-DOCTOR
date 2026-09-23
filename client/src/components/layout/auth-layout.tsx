@@ -9,9 +9,9 @@ export default function AuthLayout() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg-primary)' }}>
+    <div className="min-h-screen w-full flex" style={{ background: 'var(--bg-primary)' }}>
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center"
+      <div className="hidden lg:flex lg:w-1/2 relative w-full overflow-hidden items-center justify-center"
         style={{ background: 'linear-gradient(135deg, #022c22, #064e3b, #047857)' }}>
         <div className="absolute inset-0 opacity-10">
           {[...Array(20)].map((_, i) => (
@@ -44,7 +44,7 @@ export default function AuthLayout() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}
           className="w-full max-w-md">
           <Outlet />
