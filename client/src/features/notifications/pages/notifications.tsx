@@ -10,7 +10,7 @@ export default function Notifications() {
 
   useEffect(() => {
     notificationService.getNotifications()
-      .then((res) => { if (res.data?.success) setNotifications(res.data.data || []); })
+      .then((res) => { if (res.data?.success) setNotifications(res.data.data?.notifications || []); })
       .catch(() => toast.error('Failed to load notifications'))
       .finally(() => setLoading(false));
   }, []);

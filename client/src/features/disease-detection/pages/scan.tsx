@@ -37,7 +37,7 @@ export default function ScanDisease() {
       const fd = new FormData();
       fd.append('image', imageFile);
       const res = await aiService.detectDisease(fd);
-      if (res.data?.success) setResult(res.data.data);
+      if (res.data?.success) setResult(res.data.data.aiResult);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Scan failed. Please try again.');
     } finally {

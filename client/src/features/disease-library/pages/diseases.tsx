@@ -12,7 +12,7 @@ export default function DiseaseLibrary() {
 
   useEffect(() => {
     diseaseService.getDiseases()
-      .then((res) => { if (res.data?.success) setDiseases(res.data.data || []); })
+      .then((res) => { if (res.data?.success) setDiseases(res.data.data?.diseases || []); })
       .catch(() => toast.error('Failed to load disease library'))
       .finally(() => setLoading(false));
   }, []);

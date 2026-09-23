@@ -26,7 +26,7 @@ export default function GrowthTracker() {
     if (!selectedPlant) return;
     setLoading(true);
     growthService.getRecords(selectedPlant)
-      .then((res) => { if (res.data?.success) setRecords(res.data.data || []); })
+      .then((res) => { if (res.data?.success) setRecords(res.data.data?.records || []); })
       .catch(() => toast.error('Failed to load growth records'))
       .finally(() => setLoading(false));
   }, [selectedPlant]);

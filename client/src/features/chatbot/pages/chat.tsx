@@ -17,14 +17,14 @@ export default function Chatbot() {
   useEffect(() => {
     setLoading(true);
     chatService.getConversations()
-      .then((res) => { if (res.data?.success) setConversations(res.data.data || []); })
+      .then((res) => { if (res.data?.success) setConversations(res.data.data?.conversations || []); })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (!activeId) return;
     chatService.getConversation(activeId)
-      .then((res) => { if (res.data?.success) setMessages(res.data.data?.messages || []); });
+      .then((res) => { if (res.data?.success) setMessages(res.data.data?.conversation?.messages || []); });
   }, [activeId]);
 
   useEffect(() => {
@@ -42,14 +42,15 @@ export default function Chatbot() {
       if (activeId) fd.append('conversationId', activeId);
       const res = await chatService.sendMessage(fd);
       if (res.data?.success) {
-        const conv = res.data.data;
-        setActiveId(conv._id);
-        setMessages(conv.messages || []);
-        setConversations((prev) => {
-          const exists = prev.find((c) => c._id === conv._id);
-          if (exists) return prev.map((c) => c._id === conv._id ? conv : c);
-          return [conv, ...prev];
-        });
+        const { conversation: convId, messages: newMessages } = res.data.data;
+        if (!activeId) {
+          setActiveId(convId);
+          // Refresh conversation list to get newly named conversation
+          chatService.getConversations().then((r) => { 
+            if (r.data?.success) setConversations(r.data.data?.conversations || []); 
+          });
+        }
+        setMessages((prev) => [...prev, ...newMessages]);
       }
     } catch {
       toast.error('Failed to send message');

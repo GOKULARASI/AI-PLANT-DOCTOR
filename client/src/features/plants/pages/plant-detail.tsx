@@ -14,7 +14,7 @@ export default function PlantDetail() {
   useEffect(() => {
     if (!id) return;
     plantService.getPlant(id)
-      .then((res) => { if (res.data?.success) setPlant(res.data.data); })
+      .then((res) => { if (res.data?.success) setPlant(res.data.data?.plant || res.data.data); })
       .catch(() => toast.error('Failed to load plant'))
       .finally(() => setLoading(false));
   }, [id]);

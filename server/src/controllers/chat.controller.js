@@ -2,6 +2,7 @@ import ChatHistory from '../models/ChatHistory.js';
 import ApiResponse from '../utils/apiResponse.js';
 import ApiError from '../utils/apiError.js';
 import { chat } from '../services/ai.service.js';
+import { getCurrentWeather } from '../services/weather.service.js';
 
 // ─── Get all conversations ──────────────────────────────────────────
 export const getConversations = async (req, res, next) => {
@@ -50,10 +51,21 @@ export const sendMessage = async (req, res, next) => {
     // Add user message
     conversation.messages.push({ role: 'user', content: message });
 
+    // Provide Weather Context
+    let weatherStr = null;
+    try {
+      const w = await getCurrentWeather(req.user?.location || 'London');
+      if (w) {
+        weatherStr = `Temp: ${w.temperature}°C, Humidity: ${w.humidity}%, Rain Chance: ${w.rainChance || 0}%`;
+      }
+    } catch (err) {
+      console.error('Weather context failed:', err.message);
+    }
+
     // Get AI response
     const imageBuffer = req.file ? req.file.buffer : null;
     const mimeType = req.file?.mimetype || 'image/jpeg';
-    const aiResponse = await chat(message, conversation.messages, imageBuffer, mimeType);
+    const aiResponse = await chat(message, conversation.messages, imageBuffer, mimeType, weatherStr);
 
     // Add AI response
     conversation.messages.push({ role: 'assistant', content: aiResponse });

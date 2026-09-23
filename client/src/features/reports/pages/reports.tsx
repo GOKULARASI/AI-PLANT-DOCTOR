@@ -11,7 +11,7 @@ export default function Reports() {
 
   useEffect(() => {
     reportService.getReports()
-      .then((res) => { if (res.data?.success) setReports(res.data.data || []); })
+      .then((res) => { if (res.data?.success) setReports(res.data.data?.reports || []); })
       .catch(() => toast.error('Failed to load reports'))
       .finally(() => setLoading(false));
   }, []);
