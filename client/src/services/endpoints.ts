@@ -33,6 +33,8 @@ export const aiService = {
   detectDisease: (data: FormData) => api.post('/ai/detect-disease', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getTreatment: (data: { disease: string; plantType?: string }) => api.post('/ai/treatment', data),
   getFertilizer: (data: Record<string, string>) => api.post('/ai/fertilizer', data),
+  getDosimeter: (data: Record<string, unknown>) => api.post('/ai/dosimeter', data),
+  compareRecovery: (data: FormData) => api.post('/ai/compare-recovery', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getWaterSchedule: (data: Record<string, string>) => api.post('/ai/water-schedule', data),
 };
 
@@ -83,4 +85,8 @@ export const adminService = {
 
 export const uploadService = {
   uploadImage: (data: FormData) => api.post('/upload/image', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+};
+
+export const outbreakService = {
+  getOutbreaks: () => api.get('/outbreaks'),
 };

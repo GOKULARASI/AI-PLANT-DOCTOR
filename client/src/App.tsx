@@ -33,6 +33,7 @@ const Chatbot = lazy(() => import('@/features/chatbot/pages/chat'));
 const WeatherPage = lazy(() => import('@/features/weather/pages/weather'));
 const Notifications = lazy(() => import('@/features/notifications/pages/notifications'));
 const Reports = lazy(() => import('@/features/reports/pages/reports'));
+const OutbreakRadar = lazy(() => import('@/features/outbreak-radar/pages/radar'));
 const Profile = lazy(() => import('@/features/profile/pages/profile'));
 const AdminDashboard = lazy(() => import('@/features/admin/pages/admin-dashboard'));
 const ManageUsers = lazy(() => import('@/features/admin/pages/manage-users'));
@@ -108,6 +109,7 @@ function App() {
               <Route path="/disease-library" element={<DiseaseLibrary />} />
               <Route path="/chatbot" element={<Chatbot />} />
               <Route path="/weather" element={<WeatherPage />} />
+              <Route path="/outbreak-radar" element={<OutbreakRadar />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/profile" element={<Profile />} />

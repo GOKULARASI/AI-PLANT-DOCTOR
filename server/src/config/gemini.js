@@ -55,4 +55,22 @@ export const generateContentFromImage = async (prompt, imageBuffer, mimeType = '
   return result.response.text();
 };
 
-export default { initGemini, getModel, generateContent, generateContentFromImage };
+/**
+ * Generate content from multiple images + text prompt (e.g. Before vs After comparison)
+ */
+export const generateContentFromImages = async (prompt, imageParts) => {
+  const m = getModel();
+  if (!m) return null;
+
+  const parts = imageParts.map(({ buffer, mimeType = 'image/jpeg' }) => ({
+    inlineData: {
+      data: buffer.toString('base64'),
+      mimeType,
+    },
+  }));
+
+  const result = await m.generateContent([prompt, ...parts]);
+  return result.response.text();
+};
+
+export default { initGemini, getModel, generateContent, generateContentFromImage, generateContentFromImages };

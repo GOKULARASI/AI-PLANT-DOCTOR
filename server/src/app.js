@@ -17,6 +17,7 @@ import growthRoutes from './routes/growth.routes.js';
 import diseaseRoutes from './routes/disease.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import outbreakRoutes from './routes/outbreak.routes.js';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/api/growth', growthRoutes);
 app.use('/api/diseases', diseaseRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/outbreaks', outbreakRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────
 app.use('*', (req, res) => {
