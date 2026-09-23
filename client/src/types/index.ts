@@ -153,7 +153,7 @@ export interface Forecast {
   rainChance: number;
 }
 
-// ─── Growth Record ───────────────────────────────────────────────────
+// ─── Growth Record & Recovery ────────────────────────────────────────
 export interface GrowthRecord {
   _id: string;
   plant: string;
@@ -162,7 +162,60 @@ export interface GrowthRecord {
   leafCount: number;
   healthScore: number;
   notes: string;
+  isFollowUp?: boolean;
+  baselineRecord?: string | null;
+  healingPercentage?: number;
+  recoveryStage?: string;
+  lesionChange?: string;
+  treatmentEfficacy?: string;
+  adjustedActionPlan?: string[];
   recordedAt: string;
+}
+
+// ─── Dosimeter & Outbreak Types ──────────────────────────────────────
+export interface DosimeterPlan {
+  plantType: string;
+  growthStage: string;
+  fertilizerType: string;
+  containerType: 'pot' | 'ground';
+  soilVolumeLiters: number;
+  waterDilutionLiters: number;
+  recommendedDose: {
+    amount: number;
+    unit: string;
+    householdMeasure: string;
+    concentrationPerLiter: string;
+  };
+  applicationFrequency: string;
+  burnRiskScore: number;
+  safetyRating: string;
+  safetyColor: string;
+  precautions: string[];
+}
+
+export interface OutbreakCluster {
+  id: string;
+  disease: string;
+  pathogenType: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  reportedCases: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: string;
+  affectedCrops: string[];
+  primaryVector: string;
+  preventiveProtocol: string[];
+  lastDetected: string;
+}
+
+export interface OutbreakStats {
+  totalActiveOutbreaks: number;
+  totalCasesTracked: number;
+  criticalZonesCount: number;
+  dominantThreat: string;
+  lastRadarSweep: string;
 }
 
 // ─── API Response ────────────────────────────────────────────────────

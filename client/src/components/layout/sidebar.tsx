@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   LayoutDashboard, Leaf, ScanLine, FlaskConical, Droplets, Sprout, BookOpen, Bug,
-  MessageCircle, CloudSun, Bell, FileText, Settings, Shield, TrendingUp, Activity
+  MessageCircle, CloudSun, Bell, FileText, Settings, Shield, TrendingUp, Activity, Radio
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -40,6 +40,7 @@ const navGroups = [
     label: 'ANALYTICS',
     items: [
       { path: '/weather', icon: CloudSun, label: 'Weather' },
+      { path: '/outbreak-radar', icon: Radio, label: 'Outbreak Radar' },
       { path: '/reports', icon: FileText, label: 'Reports' },
       { path: '/notifications', icon: Bell, label: 'Notifications' },
     ],

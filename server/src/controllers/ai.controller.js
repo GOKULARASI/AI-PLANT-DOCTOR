@@ -1,10 +1,18 @@
 import Report from '../models/Report.js';
 import Plant from '../models/Plant.js';
 import User from '../models/User.js';
+import GrowthRecord from '../models/GrowthRecord.js';
 import ApiResponse from '../utils/apiResponse.js';
 import ApiError from '../utils/apiError.js';
 import { uploadToCloudinary } from '../config/cloudinary.js';
-import { detectDisease, getTreatment, getFertilizerRecommendation, getWaterSchedule } from '../services/ai.service.js';
+import {
+  detectDisease,
+  getTreatment,
+  getFertilizerRecommendation,
+  getWaterSchedule,
+  compareRecovery,
+  calculateDosage,
+} from '../services/ai.service.js';
 
 // ─── Detect Disease ──────────────────────────────────────────────────
 export const scanDisease = async (req, res, next) => {
@@ -31,6 +39,11 @@ export const scanDisease = async (req, res, next) => {
       prevention: aiResult.prevention || [],
       healthScore: aiResult.healthScore || 100,
       recoveryTime: aiResult.recoveryTime || '',
+      location: {
+        city: req.body.city || '',
+        latitude: req.body.latitude ? Number(req.body.latitude) : null,
+        longitude: req.body.longitude ? Number(req.body.longitude) : null,
+      },
       aiResponse: aiResult,
     });
 
@@ -96,4 +109,96 @@ export const getAIWaterSchedule = async (req, res, next) => {
   }
 };
 
-export default { scanDisease, getAITreatment, getAIFertilizer, getAIWaterSchedule };
+// ─── Precision Dosimeter ─────────────────────────────────────────────
+export const getAIDosimeter = async (req, res, next) => {
+  try {
+    const dosagePlan = calculateDosage(req.body);
+    ApiResponse.success(res, 'Precision dosage calculated.', { dosagePlan });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── Compare Recovery Scan ───────────────────────────────────────────
+export const compareRecoveryScan = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(ApiError.badRequest('Follow-up plant photo is required.'));
+    }
+
+    const { plantId, diseaseName = 'Plant Infection', daysPassed = 7 } = req.body;
+
+    let baselineBuffer = null;
+    let baselineRecord = null;
+
+    if (plantId) {
+      baselineRecord = await GrowthRecord.findOne({ plant: plantId, isFollowUp: false })
+        .sort({ createdAt: -1 });
+    }
+
+    const uploadResult = await uploadToCloudinary(req.file.buffer, 'plantsense/recovery');
+
+    let comparisonResult;
+    if (baselineRecord && baselineRecord.image?.url) {
+      try {
+        const fetchRes = await fetch(baselineRecord.image.url);
+        const arrayBuf = await fetchRes.arrayBuffer();
+        baselineBuffer = Buffer.from(arrayBuf);
+      } catch (err) {
+        console.warn('Could not fetch baseline image buffer:', err.message);
+      }
+    }
+
+    if (baselineBuffer) {
+      comparisonResult = await compareRecovery(baselineBuffer, req.file.buffer, diseaseName, Number(daysPassed) || 7);
+    } else {
+      comparisonResult = await compareRecovery(req.file.buffer, req.file.buffer, diseaseName, Number(daysPassed) || 7);
+    }
+
+    let growthRecord = null;
+    if (plantId) {
+      growthRecord = await GrowthRecord.create({
+        user: req.user._id,
+        plant: plantId,
+        image: { url: uploadResult.secure_url, publicId: uploadResult.public_id },
+        healthScore: comparisonResult.currentHealthScore || 75,
+        isFollowUp: true,
+        baselineRecord: baselineRecord?._id || null,
+        healingPercentage: comparisonResult.healingPercentage || 0,
+        recoveryStage: comparisonResult.recoveryStage || '',
+        lesionChange: comparisonResult.lesionChange || '',
+        treatmentEfficacy: comparisonResult.treatmentEfficacy || 'effective',
+        adjustedActionPlan: comparisonResult.adjustedActionPlan || [],
+        notes: comparisonResult.comparisonNotes || '',
+      });
+
+      const plant = await Plant.findOne({ _id: plantId, user: req.user._id });
+      if (plant) {
+        plant.healthScore = comparisonResult.currentHealthScore || plant.healthScore;
+        if (comparisonResult.healingPercentage >= 80) {
+          plant.status = 'healthy';
+        } else if (comparisonResult.healingPercentage > 0) {
+          plant.status = 'recovering';
+        }
+        await plant.save();
+      }
+    }
+
+    ApiResponse.success(res, 'Recovery analysis complete.', {
+      comparison: comparisonResult,
+      imageUrl: uploadResult.secure_url,
+      growthRecord,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default {
+  scanDisease,
+  getAITreatment,
+  getAIFertilizer,
+  getAIWaterSchedule,
+  getAIDosimeter,
+  compareRecoveryScan,
+};

@@ -16,7 +16,17 @@ const plantSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['Flowers', 'Vegetables', 'Fruits', 'Indoor', 'Outdoor', 'Medicinal', 'Herbs', 'Succulents', 'Trees', 'Other'],
+      enum: [
+        'Flowers', 'Flower',
+        'Vegetables', 'Vegetable',
+        'Fruits', 'Fruit',
+        'Indoor', 'Outdoor',
+        'Medicinal',
+        'Herbs', 'Herb',
+        'Succulents', 'Succulent',
+        'Trees', 'Tree',
+        'Shrub', 'Houseplant', 'Other',
+      ],
       default: 'Other',
     },
     type: {

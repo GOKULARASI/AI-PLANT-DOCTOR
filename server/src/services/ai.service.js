@@ -1,4 +1,4 @@
-import { generateContent, generateContentFromImage } from '../config/gemini.js';
+import { generateContent, generateContentFromImage, generateContentFromImages } from '../config/gemini.js';
 
 /**
  * AI Service — all Gemini-powered features
@@ -201,6 +201,146 @@ Keep responses concise, practical, and friendly. Use emojis occasionally. If the
   }
 };
 
+// ─── Innovation 2: "Before & After" Recovery Computer Vision Tracker ──
+export const compareRecovery = async (beforeImageBuffer, afterImageBuffer, diseaseName = 'Plant Infection', daysPassed = 7) => {
+  const prompt = `You are an expert computational plant pathologist analyzing treatment recovery progression.
+You are given two chronological images of the same plant:
+- Image 1 is the BASELINE (when disease/infection was initially diagnosed as "${diseaseName}").
+- Image 2 is the FOLLOW-UP scan taken approximately ${daysPassed} days later after treatment was applied.
+
+Analyze and compare the visual disease progression between Image 1 and Image 2.
+Return your response as a valid JSON object with exactly this structure (no markdown fences, raw JSON only):
+{
+  "healingPercentage": 42,
+  "recoveryStage": "Moderate Healing (Stage 2/3)",
+  "lesionChange": "Lesion surface area decreased by approximately 40%. Active chlorotic halos have faded.",
+  "foliageRegrowth": "2 new healthy green leaves have sprouted at the apex.",
+  "currentHealthScore": 76,
+  "treatmentEfficacy": "effective",
+  "comparisonNotes": "Fungal spreading has halted. Necrotic spots are drying out without fresh spore propagation.",
+  "adjustedActionPlan": [
+    "Reduce fungicide application frequency from weekly to bi-weekly",
+    "Gently wipe foliage with organic neem solution to protect new growth",
+    "Avoid overhead misting while necrotic tissue is healing"
+  ]
+}
+
+If the plant has worsened, set treatmentEfficacy to "worsened", healingPercentage to negative or low, and advise emergency quarantine. If healthy, set recoveryStage to "Fully Restored" and healingPercentage to 90-100.`;
+
+  try {
+    const response = await generateContentFromImages(prompt, [
+      { buffer: beforeImageBuffer, mimeType: 'image/jpeg' },
+      { buffer: afterImageBuffer, mimeType: 'image/jpeg' },
+    ]);
+    if (!response) return getMockRecoveryResult(diseaseName, daysPassed);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    console.error('AI Recovery Comparison Error:', error.message);
+    return getMockRecoveryResult(diseaseName, daysPassed);
+  }
+};
+
+// ─── Innovation 3: Precision Fertilizer & Chemical Dosimeter (Zero Plant Burn) ──
+export const calculateDosage = (params = {}) => {
+  const {
+    plantType = 'General Plant',
+    growthStage = 'Vegetative',
+    containerType = 'pot',
+    potDiameterInches = 10,
+    landAreaSqFt = 10,
+    fertilizerType = 'NPK 19-19-19',
+    soilType = 'Potting Mix',
+  } = params;
+
+  let soilVolumeLiters = 0;
+  if (containerType === 'pot') {
+    const d = Number(potDiameterInches) || 10;
+    soilVolumeLiters = Math.round((Math.PI * Math.pow((d * 2.54) / 2, 2) * (d * 2.54 * 0.9)) / 1000 * 10) / 10;
+  } else {
+    soilVolumeLiters = Math.round((Number(landAreaSqFt) || 10) * 14.16);
+  }
+
+  const fertilizerProfiles = {
+    'NPK 19-19-19': { baseRatePerL: 1.5, unit: 'g', spoonEquiv: '1/3 tsp', frequency: 'Every 14 days', burnRisk: 5 },
+    'NPK 20-20-20': { baseRatePerL: 1.5, unit: 'g', spoonEquiv: '1/3 tsp', frequency: 'Every 14 days', burnRisk: 6 },
+    'Urea (46-0-0)': { baseRatePerL: 0.6, unit: 'g', spoonEquiv: '1/8 tsp', frequency: 'Every 21 days', burnRisk: 9 },
+    'Neem Oil (1500ppm EC)': { baseRatePerL: 3.0, unit: 'ml', spoonEquiv: '1/2 tsp', frequency: 'Every 7-10 days', burnRisk: 2 },
+    'Epsom Salt (MgSO4)': { baseRatePerL: 4.0, unit: 'g', spoonEquiv: '1 tsp', frequency: 'Every 30 days', burnRisk: 3 },
+    'Copper Fungicide': { baseRatePerL: 2.0, unit: 'g', spoonEquiv: '1/2 tsp', frequency: 'Every 10 days', burnRisk: 5 },
+    'Mancozeb 75% WP': { baseRatePerL: 2.0, unit: 'g', spoonEquiv: '1/2 tsp', frequency: 'Every 10-14 days', burnRisk: 6 },
+    'Bone Meal': { baseRatePerL: 8.0, unit: 'g', spoonEquiv: '1.5 tsp', frequency: 'Every 30 days', burnRisk: 1 },
+    'Vermicompost': { baseRatePerL: 25.0, unit: 'g', spoonEquiv: '2 tbsp', frequency: 'Every 14 days', burnRisk: 0 },
+  };
+
+  const profile = fertilizerProfiles[fertilizerType] || fertilizerProfiles['NPK 19-19-19'];
+
+  let stageMultiplier = 1.0;
+  if (growthStage === 'Seedling') stageMultiplier = 0.35;
+  else if (growthStage === 'Flowering') stageMultiplier = 1.2;
+  else if (growthStage === 'Fruiting') stageMultiplier = 1.25;
+
+  const waterLiters = containerType === 'pot' 
+    ? Math.max(0.25, Math.round(soilVolumeLiters * 0.15 * 10) / 10)
+    : Math.max(1.0, Math.round(soilVolumeLiters * 0.08 * 10) / 10);
+
+  const totalDose = Math.round(waterLiters * profile.baseRatePerL * stageMultiplier * 10) / 10;
+
+  let householdMeasure = '';
+  if (profile.unit === 'g') {
+    if (totalDose < 1.0) householdMeasure = 'Pinch (approx. 0.5g)';
+    else if (totalDose <= 3.0) householdMeasure = '1/2 teaspoon (~2.5g)';
+    else if (totalDose <= 6.0) householdMeasure = '1 level teaspoon (~5g)';
+    else if (totalDose <= 12.0) householdMeasure = '2 teaspoons (~10g)';
+    else householdMeasure = `${Math.round((totalDose / 15) * 10) / 10} tablespoons (~15g each)`;
+  } else {
+    if (totalDose < 2.0) householdMeasure = '1/3 teaspoon (~1.5ml)';
+    else if (totalDose <= 3.5) householdMeasure = '1/2 teaspoon (~2.5ml)';
+    else if (totalDose <= 6.0) householdMeasure = '1 teaspoon (~5ml)';
+    else householdMeasure = `${Math.round((totalDose / 5) * 10) / 10} teaspoons`;
+  }
+
+  let calculatedBurnRisk = profile.burnRisk;
+  if (growthStage === 'Seedling') calculatedBurnRisk += 2;
+  if (soilType.toLowerCase().includes('sandy')) calculatedBurnRisk += 1;
+  calculatedBurnRisk = Math.min(10, Math.max(1, calculatedBurnRisk));
+
+  let safetyRating = 'SAFE (Zero Burn Guarantee)';
+  let safetyColor = '#10b981';
+  if (calculatedBurnRisk >= 7) {
+    safetyRating = 'HIGH BURN HAZARD (Strict Dilution Required)';
+    safetyColor = '#ef4444';
+  } else if (calculatedBurnRisk >= 4) {
+    safetyRating = 'MODERATE (Standard Precaution)';
+    safetyColor = '#f59e0b';
+  }
+
+  return {
+    plantType,
+    growthStage,
+    fertilizerType,
+    containerType,
+    soilVolumeLiters,
+    waterDilutionLiters: waterLiters,
+    recommendedDose: {
+      amount: totalDose,
+      unit: profile.unit,
+      householdMeasure,
+      concentrationPerLiter: `${Math.round((totalDose / waterLiters) * 10) / 10} ${profile.unit}/L`,
+    },
+    applicationFrequency: profile.frequency,
+    burnRiskScore: calculatedBurnRisk,
+    safetyRating,
+    safetyColor,
+    precautions: [
+      'Moisten root zone lightly 2 hours before application (never apply fertilizer to bone-dry soil)',
+      'Apply early morning (6-8 AM) or late evening (after 5 PM) to prevent leaf phototoxicity',
+      containerType === 'pot' ? 'Ensure drainage holes are clear to allow excess salt runoff' : 'Keep fertilizer 4 inches away from main plant stem',
+      growthStage === 'Seedling' ? 'CRITICAL: Do not exceed recommended dose on delicate seedling roots' : 'Rinse leaves immediately if concentrated solution touches foliage',
+    ],
+  };
+};
+
 // ─── Mock Data (fallbacks when API key is missing) ───────────────────
 function getMockDiseaseResult() {
   return {
@@ -306,4 +446,29 @@ function getMockWaterSchedule(plantType) {
   };
 }
 
-export default { detectDisease, getTreatment, getFertilizerRecommendation, getWaterSchedule, chat };
+function getMockRecoveryResult(diseaseName = 'Leaf Blight', daysPassed = 7) {
+  return {
+    healingPercentage: 42,
+    recoveryStage: 'Moderate Healing (Stage 2/3)',
+    lesionChange: `Lesion surface area decreased by approx. 40% compared to baseline scan. Fungal halos have faded.`,
+    foliageRegrowth: '2 new healthy green shoots detected at top node.',
+    currentHealthScore: 78,
+    treatmentEfficacy: 'effective',
+    comparisonNotes: `The ${diseaseName} infection has ceased active spore propagation. Chlorotic margins are re-greening.`,
+    adjustedActionPlan: [
+      'Reduce fungicide application frequency from weekly to bi-weekly',
+      'Apply mild foliar micronutrient booster to accelerate chlorophyll production',
+      'Maintain base-only watering to keep healing leaves dry',
+    ],
+  };
+}
+
+export default {
+  detectDisease,
+  getTreatment,
+  getFertilizerRecommendation,
+  getWaterSchedule,
+  chat,
+  compareRecovery,
+  calculateDosage,
+};

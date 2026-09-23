@@ -40,6 +40,8 @@ export default function AddPlant() {
       fd.append('category', form.category);
       fd.append('type', form.type);
       fd.append('location', form.location);
+      fd.append('age', form.ageValue);
+      fd.append('ageUnit', form.ageUnit);
       fd.append('age[value]', form.ageValue);
       fd.append('age[unit]', form.ageUnit);
       fd.append('status', form.status);
@@ -49,7 +51,11 @@ export default function AddPlant() {
       toast.success('Plant added successfully!');
       navigate('/plants');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to add plant');
+      const errorMsg =
+        typeof err?.response?.data?.message === 'string'
+          ? err.response.data.message
+          : err?.message || 'Failed to add plant';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

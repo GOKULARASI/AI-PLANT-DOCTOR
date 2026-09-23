@@ -24,6 +24,13 @@ const growthRecordSchema = new mongoose.Schema(
     leafCount: { type: Number, default: 0 },
     healthScore: { type: Number, default: 100, min: 0, max: 100 },
     notes: { type: String, default: '', maxlength: 500 },
+    isFollowUp: { type: Boolean, default: false },
+    baselineRecord: { type: mongoose.Schema.Types.ObjectId, ref: 'GrowthRecord', default: null },
+    healingPercentage: { type: Number, default: 0 },
+    recoveryStage: { type: String, default: '' },
+    lesionChange: { type: String, default: '' },
+    treatmentEfficacy: { type: String, enum: ['effective', 'moderate', 'ineffective', 'worsened', ''], default: '' },
+    adjustedActionPlan: [{ type: String }],
     recordedAt: { type: Date, default: Date.now },
   },
   {

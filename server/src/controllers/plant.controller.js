@@ -48,15 +48,31 @@ export const getPlant = async (req, res, next) => {
 // ─── Create plant ────────────────────────────────────────────────────
 export const createPlant = async (req, res, next) => {
   try {
-    const { name, category, type, age, ageUnit, location, notes } = req.body;
+    const { name, category, type, age, ageUnit, location, notes, status } = req.body;
+
+    let parsedAge = 0;
+    let parsedUnit = 'months';
+
+    if (age && typeof age === 'object') {
+      parsedAge = parseInt(age.value) || 0;
+      parsedUnit = age.unit || ageUnit || 'months';
+    } else if (req.body['age[value]']) {
+      parsedAge = parseInt(req.body['age[value]']) || 0;
+      parsedUnit = req.body['age[unit]'] || ageUnit || 'months';
+    } else {
+      parsedAge = parseInt(age) || 0;
+      parsedUnit = ageUnit || 'months';
+    }
+
     const plantData = {
       user: req.user._id,
       name,
-      category,
-      type,
-      location,
-      notes,
-      age: { value: parseInt(age) || 0, unit: ageUnit || 'months' },
+      category: category || 'Other',
+      type: type || '',
+      location: location || '',
+      status: status || 'healthy',
+      notes: notes || '',
+      age: { value: parsedAge, unit: parsedUnit },
     };
 
     // Upload image to Cloudinary if provided
@@ -91,7 +107,30 @@ export const updatePlant = async (req, res, next) => {
     if (notes !== undefined) plant.notes = notes;
     if (status) plant.status = status;
     if (healthScore !== undefined) plant.healthScore = parseInt(healthScore);
-    if (age !== undefined) plant.age = { value: parseInt(age), unit: ageUnit || plant.age.unit };
+
+    if (age !== undefined || req.body['age[value]'] !== undefined) {
+      let parsedAge = plant.age?.value || 0;
+      let parsedUnit = plant.age?.unit || 'months';
+      if (typeof age === 'object') {
+        parsedAge = parseInt(age.value) || 0;
+        parsedUnit = age.unit || ageUnit || parsedUnit;
+      } else if (req.body['age[value]']) {
+        parsedAge = parseInt(req.body['age[value]']) || 0;
+        parsedUnit = req.body['age[unit]'] || ageUnit || parsedUnit;
+      } else {
+        parsedAge = parseInt(age) || 0;
+        parsedUnit = ageUnit || parsedUnit;
+      }
+      plant.age = { value: parsedAge, unit: parsedUnit };
+    }
+
+    // Handle image removal
+    if (req.body.removeImage === 'true' || req.body.removeImage === true) {
+      if (plant.image?.publicId) {
+        await deleteFromCloudinary(plant.image.publicId);
+      }
+      plant.image = { url: '', publicId: '' };
+    }
 
     // Handle image update
     if (req.file) {

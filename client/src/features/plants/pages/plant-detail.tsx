@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { plantService } from '@/services/endpoints';
 import type { Plant } from '@/types';
-import { ArrowLeft, Droplet, Leaf, ShieldAlert, Loader2, Activity, MapPin, Clock } from 'lucide-react';
+import {
+  ArrowLeft, Droplet, Leaf, ShieldAlert, Loader2, Activity, MapPin, Clock,
+  Trash2, ImageOff, Camera, AlertCircle
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function PlantDetail() {
@@ -10,14 +13,21 @@ export default function PlantDetail() {
   const navigate = useNavigate();
   const [plant, setPlant] = useState<Plant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingImage, setUpdatingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!id) return;
+    loadPlant();
+  }, [id]);
+
+  const loadPlant = () => {
     if (!id) return;
     plantService.getPlant(id)
       .then((res) => { if (res.data?.success) setPlant(res.data.data?.plant || res.data.data); })
       .catch(() => toast.error('Failed to load plant'))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
 
   const handleWater = async () => {
     if (!id) return;
@@ -26,6 +36,50 @@ export default function PlantDetail() {
       toast.success('Watering logged!');
     } catch {
       toast.error('Failed to log watering');
+    }
+  };
+
+  const handleDeletePlant = async () => {
+    if (!id || !confirm('Are you sure you want to delete this plant?')) return;
+    try {
+      await plantService.deletePlant(id);
+      toast.success('Plant deleted successfully');
+      navigate('/plants');
+    } catch {
+      toast.error('Failed to delete plant');
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!id || !confirm('Remove this plant photo?')) return;
+    try {
+      setUpdatingImage(true);
+      const fd = new FormData();
+      fd.append('removeImage', 'true');
+      await plantService.updatePlant(id, fd);
+      toast.success('Photo removed');
+      loadPlant();
+    } catch {
+      toast.error('Failed to remove photo');
+    } finally {
+      setUpdatingImage(false);
+    }
+  };
+
+  const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    try {
+      setUpdatingImage(true);
+      const fd = new FormData();
+      fd.append('image', file);
+      await plantService.updatePlant(id, fd);
+      toast.success('Photo updated successfully');
+      loadPlant();
+    } catch {
+      toast.error('Failed to update photo');
+    } finally {
+      setUpdatingImage(false);
     }
   };
 
@@ -54,21 +108,79 @@ export default function PlantDetail() {
   return (
     <div className="max-w-4xl mx-auto flex flex-col animate-fade-in" style={{ gap: '32px' }}>
       {/* Header */}
-      <div className="flex items-center" style={{ gap: '16px' }}>
-        <button onClick={() => navigate('/plants')} className="rounded-xl border transition-colors hover:bg-emerald-500/10" style={{ padding: '8px', borderColor: 'var(--border-default)' }}>
-          <ArrowLeft className="w-5 h-5" style={{ color: 'var(--text-primary)' }} />
-        </button>
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>{plant.name}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{plant.type} · {plant.category}</p>
+      <div className="flex items-center justify-between" style={{ gap: '16px' }}>
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/plants')} className="rounded-xl border transition-colors hover:bg-emerald-500/10" style={{ padding: '8px', borderColor: 'var(--border-default)' }}>
+            <ArrowLeft className="w-5 h-5" style={{ color: 'var(--text-primary)' }} />
+          </button>
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>{plant.name}</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{plant.type} · {plant.category}</p>
+          </div>
         </div>
-        <span className={`ml-auto text-xs font-bold uppercase ${statusColor}`} style={{ padding: '6px 12px', borderRadius: '9999px' }}>{plant.status}</span>
+
+        <div className="flex items-center gap-3">
+          <span className={`text-xs font-bold uppercase ${statusColor}`} style={{ padding: '6px 12px', borderRadius: '9999px' }}>{plant.status}</span>
+          <button
+            onClick={handleDeletePlant}
+            className="p-2.5 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            title="Delete this plant"
+          >
+            <Trash2 className="w-4 h-4" /> Delete Plant
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3" style={{ gap: '24px' }}>
-        {/* Image */}
-        <div className="lg:col-span-1 border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-default)', minHeight: '300px' }}>
-          <img src={plant.image?.url || '/fallback-plant.jpg'} alt={plant.name} className="w-full h-full object-cover block" />
+        {/* Image & Controls */}
+        <div className="lg:col-span-1 flex flex-col gap-3">
+          <div className="border rounded-2xl overflow-hidden relative shadow-md" style={{ borderColor: 'var(--border-default)', minHeight: '260px' }}>
+            {plant.image?.url ? (
+              <img src={plant.image.url} alt={plant.name} className="w-full h-64 object-cover block" />
+            ) : (
+              <div className="w-full h-64 flex flex-col items-center justify-center gap-2" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}>
+                <Leaf className="w-12 h-12 text-emerald-500/20" />
+                <span className="text-xs">No plant photo</span>
+              </div>
+            )}
+            {updatingImage && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              </div>
+            )}
+          </div>
+
+          {/* Photo Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={updatingImage}
+              className="flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors hover:bg-emerald-500/10"
+              style={{ borderColor: 'var(--border-default)', color: 'var(--text-primary)', background: 'var(--bg-card)' }}
+            >
+              <Camera className="w-3.5 h-3.5 text-emerald-500" />
+              {plant.image?.url ? 'Change Photo' : 'Upload Photo'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUpdateImage}
+            />
+
+            {plant.image?.url && (
+              <button
+                onClick={handleRemoveImage}
+                disabled={updatingImage}
+                className="py-2 px-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                style={{ background: 'var(--bg-card)' }}
+                title="Remove photo"
+              >
+                <ImageOff className="w-3.5 h-3.5" /> Remove
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Info */}

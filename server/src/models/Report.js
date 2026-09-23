@@ -41,6 +41,11 @@ const reportSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    location: {
+      city: { type: String, default: '' },
+      latitude: { type: Number, default: null },
+      longitude: { type: Number, default: null },
+    },
     aiResponse: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
