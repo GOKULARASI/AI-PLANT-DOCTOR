@@ -126,12 +126,28 @@ export interface Weather {
   humidity: number;
   pressure: number;
   windSpeed: number;
+  windDirection?: number;
   condition: string;
   description: string;
   icon: string;
+  clouds?: number;
+  visibility?: number;
   rainChance: number;
   sunrise: string;
   sunset: string;
+  source?: string;
+  coordinates?: { lat: number; lon: number };
+  diseaseRisk?: {
+    level: 'Low' | 'Moderate' | 'High' | 'Critical';
+    score: number;
+    pathogens: string[];
+    sprayAdvice: string;
+  };
+  evapotranspiration?: {
+    dailyLossMm: number;
+    irrigationMultiplier: number;
+    wateringDirective: string;
+  };
 }
 
 export interface WeatherAdvice {

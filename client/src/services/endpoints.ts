@@ -46,8 +46,14 @@ export const chatService = {
 };
 
 export const weatherService = {
-  getCurrent: (location?: string) => api.get('/weather/current', { params: { location } }),
-  getForecast: (location?: string) => api.get('/weather/forecast', { params: { location } }),
+  getCurrent: (params?: string | { location?: string; lat?: number; lon?: number }) => {
+    const queryParams = typeof params === 'string' ? { location: params } : params;
+    return api.get('/weather/current', { params: queryParams });
+  },
+  getForecast: (params?: string | { location?: string; lat?: number; lon?: number }) => {
+    const queryParams = typeof params === 'string' ? { location: params } : params;
+    return api.get('/weather/forecast', { params: queryParams });
+  },
 };
 
 export const reportService = {
