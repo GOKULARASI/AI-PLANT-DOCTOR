@@ -38,7 +38,7 @@ const CARE_COLORS: Record<string, string> = {
 export default function PlantLibrary() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
-  const [selected, setSelected] = useState<LibraryPlant | null>(null);
+  const [selected, setSelected] = useState<LibraryPlant | null>(SAMPLE_PLANTS[2] || SAMPLE_PLANTS[0]);
 
   const categories = ['All', ...Array.from(new Set(SAMPLE_PLANTS.map((p) => p.category || 'Other')))];
   const filtered = SAMPLE_PLANTS.filter((p) => {

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { weatherService } from '@/services/endpoints';
-import type { Weather, Forecast } from '@/types';
-import { Cloud, Droplets, Wind, Thermometer, Loader2, Search } from 'lucide-react';
+import type { Weather, Forecast, WeatherAdvice } from '@/types';
+import { Cloud, Droplets, Wind, Thermometer, Loader2, Search, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function WeatherPage() {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [forecast, setForecast] = useState<Forecast[]>([]);
+  const [advice, setAdvice] = useState<WeatherAdvice[]>([]);
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState('');
   const [query, setQuery] = useState('');
@@ -18,8 +19,16 @@ export default function WeatherPage() {
         weatherService.getCurrent(loc),
         weatherService.getForecast(loc),
       ]);
-      if (wRes.data?.success) setWeather(wRes.data.data);
-      if (fRes.data?.success) setForecast(fRes.data.data || []);
+      if (wRes.data?.success) {
+        setWeather(wRes.data.data?.weather || wRes.data.data);
+        if (wRes.data.data?.advice) setAdvice(wRes.data.data.advice);
+      }
+      if (fRes.data?.success) {
+        const list = Array.isArray(fRes.data.data)
+          ? fRes.data.data
+          : fRes.data.data?.forecast || [];
+        setForecast(list);
+      }
     } catch {
       toast.error('Failed to load weather data');
     } finally {
@@ -83,6 +92,34 @@ export default function WeatherPage() {
               ))}
             </div>
           </div>
+
+          {/* Plant Care Directives from Weather */}
+          {advice.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <Sparkles className="w-5 h-5 text-amber-500" /> Weather-Based Crop Directives
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {advice.map((item, i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-2xl border flex items-start gap-3"
+                    style={{ background: 'var(--bg-card)', borderColor: 'var(--border-default)' }}
+                  >
+                    <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                    <div>
+                      <h4 className="font-bold text-xs" style={{ color: 'var(--text-primary)' }}>
+                        {item.title}
+                      </h4>
+                      <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {item.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Forecast */}
           {forecast.length > 0 && (

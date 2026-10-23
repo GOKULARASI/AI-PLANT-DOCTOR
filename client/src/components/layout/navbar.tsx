@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth-store';
-import { Bell, Search, Menu, LogOut, User, Settings } from 'lucide-react';
+import { useThemeStore } from '@/stores/theme-store';
+import { Bell, Search, Menu, LogOut, User, Settings, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
@@ -10,6 +11,7 @@ interface NavbarProps {
 
 export default function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user, logout } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,20 +40,46 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
+        {/* System AI Status Pill */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold"
+          style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-default)', color: 'var(--text-primary)' }}>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">AI Pathology: Online</span>
+        </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          aria-label="Toggle color theme"
+          className="p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 border"
+          style={{
+            color: 'var(--text-primary)',
+            background: 'var(--bg-secondary)',
+            borderColor: 'var(--border-default)',
+          }}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-emerald-600" />
+          )}
+        </button>
+
         {/* Notifications */}
         <button onClick={() => navigate('/notifications')}
-          className="relative p-2.5 rounded-xl transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)', background: 'var(--bg-secondary)' }}>
-          <Bell className="w-5 h-5" />
+          className="relative p-2.5 rounded-xl transition-colors hover:opacity-80 border"
+          style={{ color: 'var(--text-muted)', background: 'var(--bg-secondary)', borderColor: 'var(--border-default)' }}>
+          <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
         </button>
 
         {/* User dropdown */}
         <div className="relative">
           <button onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-2 p-1.5 pr-3 rounded-xl transition-colors hover:opacity-80"
-            style={{ background: 'var(--bg-secondary)' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+            className="flex items-center gap-2 p-1.5 pr-3 rounded-xl transition-colors hover:opacity-80 border"
+            style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-default)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm"
               style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
