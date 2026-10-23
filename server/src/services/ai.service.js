@@ -1,11 +1,156 @@
 import { generateContent, generateContentFromImage, generateContentFromImages } from '../config/gemini.js';
+import Disease from '../models/Disease.js';
 
 /**
- * AI Service — all Gemini-powered features
+ * AI Service — Python ML Microservice + Gemini-powered features
  */
+
+/**
+ * Call Python ML Microservice (PlantVillage Deep Learning)
+ */
+const predictWithPythonML = async (imageBuffer, mimeType = 'image/jpeg') => {
+  if (process.env.USE_LOCAL_ML === 'false') return null;
+
+  const pythonUrl = process.env.PYTHON_ML_SERVICE_URL || 'http://127.0.0.1:8000';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
+
+  try {
+    const form = new FormData();
+    const blob = new Blob([imageBuffer], { type: mimeType });
+    form.append('file', blob, 'leaf_scan.jpg');
+
+    const res = await fetch(`${pythonUrl}/predict`, {
+      method: 'POST',
+      body: form,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.success || !data.prediction) return null;
+
+    const { diseaseName, confidence, isHealthy, rawClass, engine } = data.prediction;
+    console.log(`🌿 Python ML Engine Result: ${diseaseName} (${confidence}%)`);
+
+    if (isHealthy) {
+      return {
+        isHealthy: true,
+        disease: {
+          name: 'Healthy',
+          confidence: Math.round(confidence),
+          severity: 'none',
+          description: `The plant foliage shows optimal chlorophyll coloration with no signs of pathogen lesions or pest infestation (${rawClass}).`,
+        },
+        healthScore: Math.min(100, Math.max(90, Math.round(confidence))),
+        symptoms: ['Uniform vibrant green leaf color', 'No discoloration or necrotic margins', 'Healthy plant turgor'],
+        causes: ['Optimal irrigation and nutrition', 'Good air circulation and full sunlight', 'Disease-free soil and seed stock'],
+        treatments: {
+          organic: ['Maintain regular watering routine', 'Apply balanced compost or vermicompost monthly'],
+          chemical: ['No chemical intervention required'],
+          homeRemedies: ['Wipe dust off leaves periodically to maximize photosynthesis'],
+        },
+        prevention: ['Water at soil base rather than foliar splashing', 'Inspect leaf undersides weekly for early pests', 'Maintain plant spacing'],
+        recoveryTime: 'N/A (Healthy)',
+        dosAndDonts: {
+          dos: ['Keep consistent watering schedule', 'Ensure adequate drainage in soil'],
+          donts: ['Do not over-fertilize', 'Do not let roots sit in waterlogged soil'],
+        },
+        estimatedCost: '$0 (Maintenance only)',
+        source: 'Python ML Microservice (PlantVillage)',
+        engine,
+      };
+    }
+
+    // Try finding matching disease in MongoDB Disease collection
+    let diseaseDoc = null;
+    try {
+      const searchTerms = diseaseName.split(' ').filter(w => w.length > 3);
+      if (searchTerms.length > 0) {
+        const regexPattern = searchTerms.join('|');
+        diseaseDoc = await Disease.findOne({
+          name: { $regex: new RegExp(regexPattern, 'i') },
+        });
+      }
+    } catch (dbErr) {
+      console.warn('Disease lookup warning:', dbErr.message);
+    }
+
+    if (diseaseDoc) {
+      return {
+        isHealthy: false,
+        disease: {
+          name: diseaseDoc.name,
+          confidence: Math.round(confidence),
+          severity: diseaseDoc.severity || 'medium',
+          description: diseaseDoc.description || `Diagnosed as ${diseaseDoc.name} via PlantVillage CNN classifier.`,
+        },
+        healthScore: diseaseDoc.severity === 'critical' ? 35 : diseaseDoc.severity === 'high' ? 50 : 68,
+        symptoms: diseaseDoc.symptoms?.length ? diseaseDoc.symptoms : ['Discolored lesions on leaf surface', 'Necrotic spots', 'Yellow halos'],
+        causes: diseaseDoc.causes?.length ? diseaseDoc.causes : ['Pathogen infection (spore or bacterial splash)', 'Elevated foliar humidity'],
+        treatments: diseaseDoc.treatments || {
+          organic: ['Apply Neem oil spray', 'Prune infected leaves with sterile shears'],
+          chemical: ['Apply broad-spectrum copper fungicide'],
+          homeRemedies: ['Baking soda foliar spray (1 tbsp/gallon water)'],
+        },
+        prevention: diseaseDoc.prevention?.length ? diseaseDoc.prevention : ['Avoid overhead sprinkler watering', 'Ensure proper canopy spacing'],
+        recoveryTime: diseaseDoc.recoveryTime || '2-3 weeks',
+        dosAndDonts: {
+          dos: ['Isolate affected plant', 'Sterilize pruners after cutting'],
+          donts: ['Do not compost diseased leaves', 'Do not water overhead'],
+        },
+        estimatedCost: '$10-25 for treatments',
+        source: 'Python ML Microservice (PlantVillage)',
+        engine,
+      };
+    }
+
+    // Standard fallback structure for custom classified disease
+    return {
+      isHealthy: false,
+      disease: {
+        name: diseaseName,
+        confidence: Math.round(confidence),
+        severity: 'medium',
+        description: `Pathogen detected by custom PlantVillage classifier: ${diseaseName} (${rawClass}).`,
+      },
+      healthScore: 60,
+      symptoms: ['Leaf surface spots/lesions', 'Chlorotic margins', 'Reduced foliar vigor'],
+      causes: ['PlantVillage pathogen classification', 'High ambient humidity', 'Infected crop residue'],
+      treatments: {
+        organic: ['Neem oil foliar spray (5ml/L)', 'Bacillus subtilis bio-fungicide', 'Prune infected foliage'],
+        chemical: ['Copper hydroxide or Mancozeb protective spray', 'Systemic azoxystrobin for severe infection'],
+        homeRemedies: ['Dilute milk spray (40% milk / 60% water)', 'Baking soda horticultural spray'],
+      },
+      prevention: ['Mulch soil surface to prevent spore splash', 'Rotate crops annually', 'Water at base'],
+      recoveryTime: '2-3 weeks',
+      dosAndDonts: {
+        dos: ['Prune diseased leaves immediately', 'Improve garden aeration'],
+        donts: ['Do not overhead water', 'Do not delay treatment'],
+      },
+      estimatedCost: '$10-20',
+      source: 'Python ML Microservice (PlantVillage)',
+      engine,
+    };
+  } catch (err) {
+    clearTimeout(timeout);
+    console.warn(`⚠️ Python ML service unreachable (${err.message}). Seamlessly routing to Gemini AI...`);
+    return null;
+  }
+};
 
 // ─── Disease Detection ───────────────────────────────────────────────
 export const detectDisease = async (imageBuffer, mimeType = 'image/jpeg') => {
+  // 1. Try Python ML Microservice (Local Deep Learning Model)
+  try {
+    const pythonResult = await predictWithPythonML(imageBuffer, mimeType);
+    if (pythonResult) return pythonResult;
+  } catch (err) {
+    console.warn('Python ML predict error, trying Gemini:', err.message);
+  }
+
+  // 2. Multimodal Gemini Vision AI fallback
   const prompt = `You are an expert plant pathologist AI. Analyze this plant/leaf image and provide a detailed disease diagnosis.
 
 Return your response as a valid JSON object with exactly this structure (no markdown, no code fences, just raw JSON):
